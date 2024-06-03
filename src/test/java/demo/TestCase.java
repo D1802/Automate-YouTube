@@ -2,13 +2,15 @@ package demo;
 
 import java.util.List;
 
-import org.apache.hc.client5.http.impl.auth.SystemDefaultCredentialsProvider;
+import java.util.logging.Level;
+import org.openqa.selenium.logging.LogType;
+import org.openqa.selenium.logging.LoggingPreferences;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.devtools.v116.v116CdpInfo;
-import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.*;
@@ -28,11 +30,19 @@ public class TestCase {
         System.out.println("Create a Driver");
         WebDriverManager.chromedriver().timeout(30).setup();
         driver = new ChromeDriver();
+        ChromeOptions options = new ChromeOptions();
+        LoggingPreferences logs = new LoggingPreferences();
+
+        // Set log level and type
+        logs.enable(LogType.BROWSER, Level.ALL);
+        logs.enable(LogType.DRIVER, Level.ALL);
+
+        options.setCapability("goog:loggingPrefs", logs);
         driver.manage().window().maximize();
         driver.manage().timeouts().implicitlyWait(java.time.Duration.ofSeconds(10));
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void testCase01() {
         WebDriverWait wait = new  WebDriverWait(driver, java.time.Duration.ofSeconds(30));
 
@@ -57,7 +67,7 @@ public class TestCase {
         System.out.println("About: "+titleText);
     }
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void testCase02(){
 
         try {
@@ -102,7 +112,7 @@ public class TestCase {
     }
 
 
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void testCase03(){
         try {
             
@@ -153,7 +163,8 @@ public class TestCase {
         js.executeScript("arguments[0].scrollIntoView(true);", newsHeadline);
         wait.until(ExpectedConditions.visibilityOf(newsHeadline));
 
-        List<WebElement> newsText = driver.findElements(By.xpath("//yt-formatted-string[@id='home-content-text']//span[1]"));
+        //List<WebElement> newsText = driver.findElements(By.xpath("//yt-formatted-string[@id='home-content-text']//span[1]"));
+        List<WebElement> newsText = driver.findElements(By.id("author-text"));
         //wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("(//yt-formatted-string[@id='home-content-text']//span[1])[3]")));
         List<WebElement> votCount = driver.findElements(By.xpath("//span[@id='vote-count-middle']"));
 
@@ -171,6 +182,78 @@ public class TestCase {
             System.out.println(e.getMessage());
         }
         
+    }
+
+    @Test(enabled = true, dataProvider = "excelData", dataProviderClass = DP.class)
+    public void testCase05(String data){
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, java.time.Duration.ofSeconds(30));
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            basicActions.navigateTo(driver, "https://www.youtube.com/");
+            int sum = 0;
+            WebElement search = basicActions.findeTheElement(driver, By.xpath("//input[@id='search']"));
+            basicActions.enter_text(search, data);
+            search.sendKeys(Keys.ENTER);
+
+            List<WebElement> views = basicActions.findeTheElements(driver, By.xpath("//div[@id='metadata-line']//span[1]"));
+
+            for (int i = 0; i < views.size(); i++) {
+
+                if (!views.get(i).getText().isEmpty()) {
+
+                    
+                String viewsArray = views.get(i).getText();
+                String[] viewsCount = viewsArray.split(" ");
+                sum += convertToNumber(viewsCount[0]);
+                js.executeScript("arguments[0].scrollIntoView(true);", views.get(i));
+                if (sum > 100000000) {
+                    System.out.println(sum);
+                    break;
+                }
+                    
+                }
+
+
+            }
+
+            
+        } catch (Exception e) {
+            // TODO: handle exception
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static long convertToNumber(String input) {
+        if (input == null || input.isEmpty()) {
+            throw new IllegalArgumentException("Input cannot be null or empty");
+        }
+
+        char lastChar = input.charAt(input.length() - 1);
+        String numberPart = input.substring(0, input.length() - 1);
+        int multiplier = 1;
+
+        switch (lastChar) {
+            case 'K':
+            case 'k':
+                multiplier = 1_000;
+                break;
+            case 'M':
+            case 'm':
+                multiplier = 1_000_000;
+                break;
+            // Add more cases for other suffixes if needed
+            default:
+                numberPart = input; // no suffix, just a number
+                multiplier = 1;
+                break;
+        }
+
+        try {
+            double value = Double.parseDouble(numberPart);
+            return (long) (value * multiplier);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid input format", e);
+        }
     }
 
     @AfterSuite(enabled = true)

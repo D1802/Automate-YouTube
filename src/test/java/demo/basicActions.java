@@ -1,6 +1,7 @@
 package demo;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -51,11 +52,23 @@ public class basicActions {
             System.out.println("Exceptions: "+e.getMessage());
         }
     }
-
+    
     public static WebElement findeTheElement(ChromeDriver driver, By str){
 
         try {
             return driver.findElement(str);
+        } catch (Exception e) {
+            // TODO: handle exception
+            System.out.println("Exception: "+e.getMessage());
+            return null;
+        }
+    }
+
+  
+    public static List<WebElement> findeTheElements(ChromeDriver driver, By str){
+
+        try {
+            return driver.findElements(str);
         } catch (Exception e) {
             // TODO: handle exception
             System.out.println("Exception: "+e.getMessage());
